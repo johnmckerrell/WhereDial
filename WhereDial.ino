@@ -20,7 +20,8 @@
 #include "WhereDial_Local.h"
 
 const int stepsPerRevolution = 2048;
-Stepper myStepper(stepsPerRevolution, A2,A5,A3,A4);            
+int motorPins[] = {A2,A5,A3,A4};
+Stepper myStepper(stepsPerRevolution, motorPins[0],motorPins[1],motorPins[2],motorPins[3]);            
 
 byte mac[] = WHEREDIAL_LOCAL_MAC;
 char *userAgent = "WhereDial/1.0";
@@ -365,5 +366,10 @@ void turn()
   }
   /* OK - TURN DOWN LED  05 */ 
   digitalWrite(errorLeds[0],LOW);
+  
+  /* TURN OFF THE MOTOR PINS, SAVE POWER & HEAT */
+  for (int i = 0; i < 4; ++i) {
+    digitalWrite(motorPins[i],LOW);
+  }
 }
 
