@@ -321,11 +321,38 @@ int getPage()
   if (err == 0)
   {
     
+    delay(1000);
+    Serial.print("millis()=");
+    Serial.println(millis());
+    
     /* OK - TURN DOWN LED  02 */ 
     digitalWrite(errorLeds[3],LOW);
     Serial.println("Started request ok");
+    if (!http.available()) {
+      digitalWrite(errorLeds[2],LOW);
+      digitalWrite(errorLeds[1],LOW);
+      digitalWrite(errorLeds[0],LOW);
+      while (!http.available() && http.connected()) {
+        delay(10);
+      }
+      // If we've disconnected with no data available,
+      // it's a connection problem not a status code problem
+      if (! http.available()) {
+        Serial.println("Disconnected");
+        digitalWrite(errorLeds[3],HIGH);
+      } else {
+        Serial.println("Turns out we have data");
+      }
+      digitalWrite(errorLeds[2],HIGH);
+      digitalWrite(errorLeds[1],HIGH);
+      digitalWrite(errorLeds[0],HIGH);
+    } else {
+      Serial.println("We have data straight away");
+    }
 
-    err = http.responseStatusCode();
+    if (http.connected()||http.available()) {
+      err = http.responseStatusCode();
+    }
     if ((err >= 200) && (err < 300))
     {
       
@@ -343,6 +370,8 @@ int getPage()
     {
       Serial.print("Web request failed, got status code: ");
       Serial.println(err);
+      Serial.print("millis()=");
+      Serial.println(millis());
       digitalWrite(ledRed,HIGH);      
     }
   } 
