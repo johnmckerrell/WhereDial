@@ -109,6 +109,8 @@ void setup()
 
 void loop()
 {
+  digitalWrite(ledRed,LOW);
+
   for(int i=0;i<5;i++)
   {
     delay(50);
@@ -178,7 +180,6 @@ int getConfig()
     if ((err >= 200) && (err < 300))
     {
       
-      digitalWrite(ledRed,LOW);
       /* OK - TURN DOWN LED  03 */ 
       digitalWrite(errorLeds[2],LOW);
       
@@ -286,8 +287,37 @@ int getPage()
   Serial.println("end-ip");
   int err =0;
 
-  Serial.println("Requesting new angle...");  
-  err = http.get(ip, apiHostname,apiPort, apiPath, userAgent);
+  Serial.println("Requesting new angle...");
+  // We need to add &position=DDD&placeHash=40CHARS
+  int apiPathSize = strlen(apiPath);
+  int pathSize = apiPathSize+64;
+  char path[pathSize];
+  char *pathPointer = path;
+  strncpy(path,apiPath,apiPathSize);
+  char* queryString = strstr(apiPath,"?");
+  pathPointer += apiPathSize;
+  *pathPointer = '?';
+  if (queryString) {
+    *pathPointer = '&';
+  }
+  ++pathPointer;
+
+  strcpy(pathPointer,"position=");
+  pathPointer+=9;  
+  char pos[4];
+  sprintf(pos,"%d",actual);
+  strcpy(pathPointer,pos);
+  pathPointer += strlen(pos);
+  
+  strcpy(pathPointer,"&placeHash=");
+  pathPointer+=11;
+  strcpy(pathPointer,lastPlaceHash);
+  pathPointer+=strlen(lastPlaceHash);
+  
+  Serial.print("Calculated path=");
+  Serial.println(path);
+  
+  err = http.get(ip, apiHostname,apiPort, path, userAgent);
   if (err == 0)
   {
     
@@ -299,11 +329,10 @@ int getPage()
     if ((err >= 200) && (err < 300))
     {
       
-      digitalWrite(ledRed,LOW);
       /* OK - TURN DOWN LED  03 */ 
       digitalWrite(errorLeds[2],LOW);
       
-      delay(1000);
+      delay(100);
       processPage();
       
       /* OK - TURN DOWN LED  04 */ 
@@ -342,9 +371,9 @@ void processPage()
   Serial.println(prev);
   Serial.println(actual);
   
-  Serial.print("read=");
-  char c =http.read();
-  Serial.println(c);
+//  Serial.print("read=");
+//  char c =http.read();
+//  Serial.println(c);
   
   char placeHash[41];
   charCount = http.readBytesUntil(',', placeHash, sizeof(placeHash)-1);
