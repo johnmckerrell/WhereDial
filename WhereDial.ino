@@ -28,7 +28,7 @@ char *userAgent = "WhereDial/1.0";
 
 int ledRed=2;
 
-int errorLeds[] = {3,4,5,6,7};
+int errorLeds[] = {7,6,5,4,3};
 /*
 #LEDS    ERROR
 [1][0][1][0][1] => SetupEthernet problem
@@ -204,6 +204,8 @@ int getConfig()
     
   } 
   if (!ret) {
+    // Turn off LED 0 so that we can distinguish this from
+    // a failed position request
     digitalWrite(errorLeds[0],LOW);
   }
   http.stop();
