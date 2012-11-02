@@ -320,6 +320,7 @@ int getPage()
   Serial.print("Calculated path=");
   Serial.println(path);
   
+  http.setHttpResponseTimeout(120000l);
   err = http.get(ip, apiHostname,apiPort, path, userAgent);
   if (err == 0)
   {
@@ -335,28 +336,28 @@ int getPage()
       digitalWrite(errorLeds[2],LOW);
       digitalWrite(errorLeds[1],LOW);
       digitalWrite(errorLeds[0],LOW);
-      while (!http.available() && http.connected()) {
-        delay(10);
-      }
-      // If we've disconnected with no data available,
-      // it's a connection problem not a status code problem
-      if (! http.available()) {
-        Serial.println("Disconnected");
-        digitalWrite(errorLeds[3],HIGH);
-      } else {
-        Serial.println("Turns out we have data");
-      }
-      digitalWrite(errorLeds[2],HIGH);
-      digitalWrite(errorLeds[1],HIGH);
-      digitalWrite(errorLeds[0],HIGH);
     } else {
       Serial.println("We have data straight away");
     }
 
-    if (http.connected()||http.available()) {
-      err = http.responseStatusCode();
+    err = http.responseStatusCode();
+    digitalWrite(errorLeds[2],HIGH);
+    digitalWrite(errorLeds[1],HIGH);
+    digitalWrite(errorLeds[0],HIGH);
+
+    if ((err == HTTP_ERROR_TIMED_OUT))
+    {
+      // Ignore this
+      ret = 1;
+      // Make sure we don't turn
+      prev = actual;
+      placeChanged = 0;
+      Serial.println("Ignoring time out");
+      Serial.print("millis()=");
+      Serial.println(millis());
+
     }
-    if ((err >= 200) && (err < 300))
+    else if ((err >= 200) && (err < 300))
     {
       
       /* OK - TURN DOWN LED  03 */ 
