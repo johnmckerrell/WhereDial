@@ -118,9 +118,12 @@ void loop()
   }
   Serial.println();
   delay(1000);
-  if(getPage() == 1)
+  if(getPage() == 1) {
     turn();
-  delay(apiRefreshTime*1000);
+    delay(apiRefreshTime*1000);
+  } else {
+    delay(30000);
+  }
 }
 
 void setupEthernet()
