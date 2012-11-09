@@ -358,7 +358,7 @@ int getPage()
           Serial.print(":keepAliveTimeoutStart=");
           Serial.println(keepAliveTimeoutStart);
           Serial.println("Sending keep alive");
-          if (!client.sendKeepAlive()) {
+          if (1/*||!client.sendKeepAlive()*/) {
             Serial.println("Keep alive failed");
             break;
           } else {
