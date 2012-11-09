@@ -320,7 +320,6 @@ int getPage()
   Serial.print("Calculated path=");
   Serial.println(path);
   
-  http.setHttpResponseTimeout(120000l);
   err = http.get(ip, apiHostname,apiPort, path, userAgent);
   if (err == 0)
   {
@@ -332,32 +331,50 @@ int getPage()
     /* OK - TURN DOWN LED  02 */ 
     digitalWrite(errorLeds[3],LOW);
     Serial.println("Started request ok");
+    while (http.available() && http.peek() == '!') {
+      http.read();
+    }
     if (!http.available()) {
       digitalWrite(errorLeds[2],LOW);
       digitalWrite(errorLeds[1],LOW);
       digitalWrite(errorLeds[0],LOW);
+      unsigned long keepAliveTimeoutStart = millis();
+      while (!http.available() && http.connected()) {
+        delay(10);
+        if ((millis() - keepAliveTimeoutStart) > 10000) {
+          Serial.print("millis()=");
+          Serial.print(millis());
+          Serial.print(":keepAliveTimeoutStart=");
+          Serial.println(keepAliveTimeoutStart);
+          Serial.println("Sending keep alive");
+          if (!client.sendKeepAlive()) {
+            Serial.println("Keep alive failed");
+            break;
+          } else {
+            keepAliveTimeoutStart = millis();
+            Serial.println("Keep alive successful");
+          }
+        }
+      }
+      // If we've disconnected with no data available,
+      // it's a connection problem not a status code problem
+      if (! http.available()) {
+        Serial.println("Disconnected");
+        digitalWrite(errorLeds[3],HIGH);
+      } else {
+        Serial.println("Turns out we have data");
+      }
+      digitalWrite(errorLeds[2],HIGH);
+      digitalWrite(errorLeds[1],HIGH);
+      digitalWrite(errorLeds[0],HIGH);
     } else {
       Serial.println("We have data straight away");
     }
 
-    err = http.responseStatusCode();
-    digitalWrite(errorLeds[2],HIGH);
-    digitalWrite(errorLeds[1],HIGH);
-    digitalWrite(errorLeds[0],HIGH);
-
-    if ((err == HTTP_ERROR_TIMED_OUT))
-    {
-      // Ignore this
-      ret = 1;
-      // Make sure we don't turn
-      prev = actual;
-      placeChanged = 0;
-      Serial.println("Ignoring time out");
-      Serial.print("millis()=");
-      Serial.println(millis());
-
+    if (http.connected()||http.available()) {
+      err = http.responseStatusCode();
     }
-    else if ((err >= 200) && (err < 300))
+    if ((err >= 200) && (err < 300))
     {
       
       /* OK - TURN DOWN LED  03 */ 
