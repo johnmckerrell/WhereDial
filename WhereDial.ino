@@ -23,7 +23,6 @@ const int stepsPerRevolution = 2048;
 int motorPins[] = {A2,A5,A3,A4};
 Stepper myStepper(stepsPerRevolution, motorPins[0],motorPins[1],motorPins[2],motorPins[3]);            
 
-byte mac[] = WHEREDIAL_LOCAL_MAC;
 char *userAgent = "WhereDial/1.0";
 
 int ledRed=2;
@@ -93,6 +92,18 @@ void setup()
     digitalWrite(errorLeds[i],HIGH);
   }
   digitalWrite(ledRed,LOW);
+  
+  if (strlen(cMapMeAtConfigPath)>12) {
+    char *macStart = cMapMeAtConfigPath + (strlen(cMapMeAtConfigPath)-12);
+    const char hexDigits[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    // Append the MAC address
+    for (int i =0; i < 6; i++)
+    {
+      macStart[0+(2*i)] = hexDigits[(bWhereDialLocalMac[i] >> 4) & 0x0f];
+      macStart[1+(2*i)] = hexDigits[bWhereDialLocalMac[i] & 0x0f];
+    }
+
+  }
 
   while (!getConfig()) {
     delay( 20000 );
@@ -131,7 +142,7 @@ void setupEthernet()
   // Set up the Ethernet using DHCP to automatically configure an IP address
   // and the DNS server to use
   Serial.println("Setting up Ethernet");
-  while (Ethernet.begin(mac) != 1)
+  while (Ethernet.begin(bWhereDialLocalMac) != 1)
   {
     Serial.println("Error getting IP address via DHCP, trying again...");
     digitalWrite(ledRed,HIGH);
@@ -156,7 +167,7 @@ int getConfig()
   // Not ideal that we discard any errors here, but not a lot we can do in the ctor
   // and we'll get a connect error later anyway
   Serial.println("IP:");
-  int dnsErr = dns.getHostByName(MAPME_AT_HOSTNAME,ip);
+  int dnsErr = dns.getHostByName(cMapMeAtHostname,ip);
   if(dnsErr != 1)
   {
       Serial.print("Error with the DNS, errocode:");
@@ -171,7 +182,7 @@ int getConfig()
   int err =0;
 
   Serial.println("Requesting config...");  
-  err = http.get(ip, MAPME_AT_HOSTNAME,MAPME_AT_PORT, MAPME_AT_CONFIG_PATH, userAgent);
+  err = http.get(ip, cMapMeAtHostname,cMapMeAtPort, cMapMeAtConfigPath, userAgent);
   if (err == 0)
   {
     
